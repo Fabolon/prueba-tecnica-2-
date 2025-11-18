@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../appTest.js";
 
+// Simulamos el modelo de Ruleta para no tocar la base real en las pruebas
 jest.mock("../models/ruleta.js", () => {
   const saveMock = jest.fn().mockResolvedValue(true);
   return {
@@ -25,6 +26,7 @@ jest.mock("../models/ruleta.js", () => {
   };
 });
 
+// Tambien simulamos el modelo de apuestas para aislar las reglas de negocio
 jest.mock("../models/apuesta.js", () => {
   return {
     default: {
@@ -38,7 +40,7 @@ jest.mock("../models/apuesta.js", () => {
   };
 });
 
-describe("Pruebas de integración de ruleta", () => {
+describe("Pruebas de integracion de ruleta", () => {
   test("Debe crear una ruleta", async () => {
     const res = await request(app).post("/ruletas");
 
@@ -48,12 +50,12 @@ describe("Pruebas de integración de ruleta", () => {
   });
 
   test("Debe abrir una ruleta y apostar", async () => {
-    // Abrir ruleta
+    // Validamos que el endpoint de apertura responda correctamente
     const resAbrir = await request(app).put("/ruletas/1/abrir");
     expect(resAbrir.statusCode).toBe(200);
     expect(resAbrir.body.mensaje).toBe("Ruleta abierta correctamente");
 
-    // Apostar en ruleta abierta
+    // Luego enviamos una apuesta para confirmar que se registre
     const resApuesta = await request(app)
       .post("/ruletas/1/apostar")
       .send({

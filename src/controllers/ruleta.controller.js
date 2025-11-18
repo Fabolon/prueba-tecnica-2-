@@ -1,7 +1,7 @@
 import Ruleta from "../models/ruleta.js";
 import Apuesta from "../models/apuesta.js";
 
-// Crear ruleta
+// Crea una ruleta vacia cuyo estado inicial es "cerrada"
 export const crearRuleta = async (req, res) => {
   try {
     const ruleta = await Ruleta.create({});
@@ -11,7 +11,7 @@ export const crearRuleta = async (req, res) => {
   }
 };
 
-// Abrir ruleta
+// Cambia el estado de la ruleta para aceptar apuestas
 export const abrirRuleta = async (req, res) => {
   try {
     const { id } = req.params;
@@ -30,7 +30,7 @@ export const abrirRuleta = async (req, res) => {
   }
 };
 
-// Realizar apuesta
+// Registra una apuesta asociada a una ruleta abierta
 export const apostar = async (req, res) => {
   try {
     const { ruletaId } = req.params;
@@ -38,12 +38,17 @@ export const apostar = async (req, res) => {
 
     const ruleta = await Ruleta.findById(ruletaId);
 
-    if (!ruleta) return res.status(404).json({ error: "Ruleta no encontrada" });
-    if (ruleta.estado !== "abierta")
-      return res.status(400).json({ error: "La ruleta está cerrada" });
+    if (!ruleta) {
+      return res.status(404).json({ error: "Ruleta no encontrada" });
+    }
+    if (ruleta.estado !== "abierta") {
+      return res.status(400).json({ error: "La ruleta esta cerrada" });
+    }
 
-    if (valorApostado > 10000)
-      return res.status(400).json({ error: "Máximo permitido: 10.000" });
+    // Validamos el limite de dinero permitido por la especificacion
+    if (valorApostado > 10000) {
+      return res.status(400).json({ error: "Maximo permitido: 10.000" });
+    }
 
     const apuesta = await Apuesta.create({
       ruletaId,
@@ -53,6 +58,7 @@ export const apostar = async (req, res) => {
       valorApostado
     });
 
+    // Guardamos la referencia de la apuesta en la ruleta
     ruleta.apuestas.push(apuesta._id);
     await ruleta.save();
 
@@ -62,15 +68,16 @@ export const apostar = async (req, res) => {
   }
 };
 
-// Cerrar ruleta y calcular ganadores
+// Cierra la ruleta, define los ganadores y calcula las ganancias
 export const cerrarRuleta = async (req, res) => {
   try {
     const { id } = req.params;
     const ruleta = await Ruleta.findById(id).populate("apuestas");
 
-    if (!ruleta) return res.status(404).json({ error: "Ruleta no encontrada" });
+    if (!ruleta) {
+      return res.status(404).json({ error: "Ruleta no encontrada" });
+    }
 
-    // Generar número ganador
     const numeroGanador = Math.floor(Math.random() * 37);
     const colorGanador = numeroGanador % 2 === 0 ? "rojo" : "negro";
 
@@ -78,7 +85,6 @@ export const cerrarRuleta = async (req, res) => {
     ruleta.numeroGanador = numeroGanador;
     ruleta.colorGanador = colorGanador;
 
-    // Evaluar apuestas
     const resultados = [];
 
     for (const apuesta of ruleta.apuestas) {
@@ -110,7 +116,7 @@ export const cerrarRuleta = async (req, res) => {
   }
 };
 
-// Listar ruletas
+// Devuelve todas las ruletas registradas con su estado actual
 export const listarRuletas = async (req, res) => {
   try {
     const ruletas = await Ruleta.find();
